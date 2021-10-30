@@ -1,0 +1,14 @@
+[
+{
+    "email_enabled": "False",
+    "phone_enabled": "True",
+    "date_start": "2021-10-01",
+    "date_end": "2021-10-09",
+    "day": 1111111,
+    "min_length": 1,
+    "max_length": 7,
+  
+    campground_id = db.relationship("Campground", backref="alerts")
+    user_id = db.relationship("User", backref="alerts")
+}
+]
