@@ -59,6 +59,9 @@ def create_campground(name, code, park_type, park_name, lat_long, description, i
 def get_all_alerts():
     return Alert.query.all()
 
+def get_all_campgrounds():
+    return Campground.query.all()
+
 def get_alert_by_id(id):
     return Alert.query.get(id)
 

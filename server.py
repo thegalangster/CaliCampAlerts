@@ -5,8 +5,12 @@ from twilio.twiml.messaging_response import MessagingResponse
 from model import connect_to_db
 from jinja2 import StrictUndefined
 from celery import Celery
-import collect, crud, server, message
+import collect, crud, server, message, os
 from datetime import datetime
+
+# Import MapBox key
+
+mapbox_access_token = os.environ.get('MAPBOX_API_KEY')
 
 # Need to seperate celery and flask
 
@@ -43,7 +47,29 @@ def collect_and_alert(alerts=None):
 
 @app.route('/')
 def index():
-    return render_template('homepage.html')
+    campgrounds = crud.get_all_campgrounds()
+    return render_template('homepage.html', mapbox_access_token=mapbox_access_token, campgrounds=convert_to_geojson(campgrounds))
+
+def convert_to_geojson(campgrounds):
+    campgrounds_geojson = []
+    for campground in campgrounds:
+        if campground.lat_long["long"] == 0 and campground.lat_long["lat"] == 0:
+            continue
+        campgrounds_geojson.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [campground.lat_long["long"], campground.lat_long["lat"]]
+                },
+                "properties": {
+                    "name": campground.name,
+                    "park_name": campground.park_name
+                }
+            }
+        )
+    return campgrounds_geojson
+
 
 @app.route('/create_alert')
 def create_alert():

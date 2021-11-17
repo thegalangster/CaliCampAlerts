@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+<link href="/static/homepage.css" rel="stylesheet">
+
+<!-- https://docs.mapbox.com/mapbox-gl-js/example/filter-features-within-map-view/ -->
+
+<div id='map' class='w-100'></div>
+
+<div class="map-overlay">
+    <fieldset>
+        <input id="feature-filter" type="text" placeholder="Search for California Park or Campground Name">
+    </fieldset>
+    <div id="feature-listing" class="listing"></div>
+</div>
+
+    <script>
+        mapboxgl.accessToken = '{{ mapbox_access_token }}';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/aimeegalang/ckvq6a1uy0fr515mjr4o4svzn',
+            center: [-116.417931, 36.8],
+            zoom: 5.25
+        });
+
+        const geojson = {{ campgrounds|safe }};
+        console.log(geojson);
+
+        const filterEl = document.getElementById('feature-filter');
+        const listingEl = document.getElementById('feature-listing');
+        filterEl.parentNode.style.display = 'block';
+
+        const popup = new mapboxgl.Popup({
+            closeButton: false
+        });
+
+        function renderListings(features) {
+            const empty = document.createElement('p');
+            // Clear any existing listings
+            listingEl.innerHTML = '';
+            if (features.length) {
+                for (const feature of features) {
+                    const itemLink = document.createElement('a');
+                    const label = `${feature.properties.name}`;
+                    itemLink.href = feature.properties.name;
+                    itemLink.target = '_blank';
+                    itemLink.textContent = label;
+                    itemLink.addEventListener('mouseover', () => {
+                        popup
+                            .setLngLat(feature.geometry.coordinates)
+                            .setText(label)
+                            .addTo(map);
+                    });
+                    listingEl.appendChild(itemLink);
+                }
+            } else if (features.length === 0 && filterEl.value !== '') {
+                empty.textContent = 'No results found';
+                listingEl.appendChild(empty);
+            } 
+
+        }
+
+        function normalize(string) {
+            return string.trim().toLowerCase();
+        }
+
+        map.on('load', () => {
+            map.loadImage(
+                'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
+                (error, image) => {
+                    if (error) throw error;
+                    map.addImage('custom-marker', image);
+                    // Add a GeoJSON source with 2 points
+                    map.addSource('campgrounds', {
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'FeatureCollection',
+                            'features': geojson
+                        }
+                    });
+                    map.addLayer({
+                    'id': 'campgrounds',
+                    'source': 'campgrounds',
+                    'type': 'circle',
+                    'paint': {
+                        'circle-color': '#4264fb',
+                        'circle-radius': 4,
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#ffffff'
+                        }
+                    });
+                }
+            );
+
+            filterEl.addEventListener('keyup', (e) => {
+                const value = normalize(e.target.value);
+
+                // Filter visible features that match the input value.
+                const filtered = [];
+                for (const feature of geojson) {
+                    const name = normalize(feature.properties.name);
+                    const park_name = normalize(feature.properties.park_name);
+                    if (name.includes(value) || name.includes(value)) {
+                        filtered.push(feature);
+                    }
+                }
+
+                // Populate the sidebar with filtered results
+                renderListings(filtered);
+
+                // Set the filter to populate features into the layer.
+                if (filtered.length) {
+                    map.setFilter('campgrounds', [
+                        'match',
+                        ['get', 'name'],
+                        filtered.map((feature) => {
+                            return feature.properties.name;
+                        }),
+                        true,
+                        false
+                    ]);
+                }
+            });
+
+        });
+
+   
+    </script>
+
+{% endblock %}

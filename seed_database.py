@@ -30,7 +30,7 @@ campground = {
     "code": 232502, 
     "park_type": "federal", 
     "park_name": "Channel Islands National Park",
-    "lat_long": {"lat": -121.4941667, "long": 35.9916667},
+    "lat_long": {"lat": 35.9916667, "long": -121.4941667},
     "description": "Once visitors have scaled the rugged cliffs using the stairwell from the Landing Cove, they will be rewarded with a campground perched on the bluffs with magnificent coastal views.",
     "image": "https://cdn.recreation.gov/public/2018/08/07/01/05/b06b2294-25a0-4501-937a-62cdee4e63bc_1600.jpg"
 }
