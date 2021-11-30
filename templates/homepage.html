@@ -6,128 +6,284 @@
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
 <link href="/static/homepage.css" rel="stylesheet">
 
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
 <!-- https://docs.mapbox.com/mapbox-gl-js/example/filter-features-within-map-view/ -->
+<!-- https://getbootstrap.com/docs/4.0/components/modal/ -->
+<!-- https://docs.mapbox.com/mapbox-gl-js/example/add-terrain/ -->
+<!-- https://www.daterangepicker.com/ -->
 
+<!-- Map and Search Bar -->
 <div id='map' class='w-100'></div>
-
 <div class="map-overlay">
     <fieldset>
-        <input id="feature-filter" type="text" placeholder="Search for California Park or Campground Name">
+        <input id="feature-filter" type="text" placeholder="Search and Select Campground">
     </fieldset>
     <div id="feature-listing" class="listing"></div>
+
+    <!-- Modal Pop Up -->
+    <div class="modal bd-example-modal-lg" id="modalCenter" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h3 class="modal-title" id="modalLongTitle">Create an Alert</h3>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col" id="campInfo">
+                            <h5 class="modal-title" id="campName"></h5>
+                            <h6 class="modal-title" id="parkName"></h6>
+                            <div class="overflow-auto" id="campDescr"></div>
+                        </div>
+                        <div class="col" id="bookingReqs">
+                            <div class="form-group">
+                                <img id="campImage">
+
+                                <form method="POST" action="/create_alert">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <label>Select Date Range:</label>
+                                    <input type="text" name="datefilter" value=""/>
+                                    <div class="notification-type">
+                                        <label>Email <input type="checkbox" id="email" name="email" value="yes"/></label>
+                                        <label>Text <input type="checkbox" id="text" name="text" value="yes"/></label>
+                                    </div>
+                                    <input type="hidden" id="campground_code" name="campground_code" value=""/>
+                                    <br>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </form>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
 </div>
 
-    <script>
-        mapboxgl.accessToken = '{{ mapbox_access_token }}';
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/aimeegalang/ckvq6a1uy0fr515mjr4o4svzn',
-            center: [-116.417931, 36.8],
-            zoom: 5.25
+
+
+<script>
+
+    // Get the modal
+    var modal = document.getElementById("ModalCenter");
+
+    // New MapBox map
+    mapboxgl.accessToken = '{{ mapbox_access_token }}';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/satellite-v9',
+        center: [-116.417931, 37.8],
+        zoom: 5
+    });
+
+    // Render search bar
+    const geojson = {{ campgrounds|safe }};
+    console.log(geojson);
+
+    const filterEl = document.getElementById('feature-filter');
+    const listingEl = document.getElementById('feature-listing');
+    filterEl.parentNode.style.display = 'block';
+
+    const popup = new mapboxgl.Popup({
+        closeButton: false
+    });
+
+    // Add 3D terrain
+    function addTerrain() {
+        map.addSource('terrain', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
         });
-
-        const geojson = {{ campgrounds|safe }};
-        console.log(geojson);
-
-        const filterEl = document.getElementById('feature-filter');
-        const listingEl = document.getElementById('feature-listing');
-        filterEl.parentNode.style.display = 'block';
-
-        const popup = new mapboxgl.Popup({
-            closeButton: false
+        map.setTerrain({ 'source': 'terrain', 'exaggeration': 1.5 });
+        // Add sky layer
+        map.addLayer({
+            'id': 'sky',
+            'type': 'sky',
+            'paint': {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 0.0],
+                'sky-atmosphere-sun-intensity': 15
+            }
         });
+    }
 
-        function renderListings(features) {
-            const empty = document.createElement('p');
-            // Clear any existing listings
-            listingEl.innerHTML = '';
-            if (features.length) {
-                for (const feature of features) {
-                    const itemLink = document.createElement('a');
-                    const label = `${feature.properties.name}`;
-                    itemLink.href = feature.properties.name;
-                    itemLink.target = '_blank';
-                    itemLink.textContent = label;
-                    itemLink.addEventListener('mouseover', () => {
-                        popup
-                            .setLngLat(feature.geometry.coordinates)
-                            .setText(label)
-                            .addTo(map);
-                    });
-                    listingEl.appendChild(itemLink);
-                }
-            } else if (features.length === 0 && filterEl.value !== '') {
-                empty.textContent = 'No results found';
-                listingEl.appendChild(empty);
-            } 
+    function populateModal(name, code) {
+        const title = document.getElementsByClassName("modal-title");
+        title[0].innerText = 'Create Alert';
+        const campgroundName = document.getElementById("campName")
+        const parkName = document.getElementById("parkName")
+        const campgroundImage = document.getElementById("campImage")
+        const campDescr = document.getElementById("campDescr")
+        const bookingReqs = document.getElementById("bookingReqs")
+        const campgroundCode = document.getElementById("campground_code")
 
-        }
-
-        function normalize(string) {
-            return string.trim().toLowerCase();
-        }
-
-        map.on('load', () => {
-            map.loadImage(
-                'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
-                (error, image) => {
-                    if (error) throw error;
-                    map.addImage('custom-marker', image);
-                    // Add a GeoJSON source with 2 points
-                    map.addSource('campgrounds', {
-                        'type': 'geojson',
-                        'data': {
-                            'type': 'FeatureCollection',
-                            'features': geojson
-                        }
-                    });
-                    map.addLayer({
-                    'id': 'campgrounds',
-                    'source': 'campgrounds',
-                    'type': 'circle',
-                    'paint': {
-                        'circle-color': '#4264fb',
-                        'circle-radius': 4,
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#ffffff'
-                        }
-                    });
-                }
-            );
-
-            filterEl.addEventListener('keyup', (e) => {
-                const value = normalize(e.target.value);
-
-                // Filter visible features that match the input value.
-                const filtered = [];
-                for (const feature of geojson) {
-                    const name = normalize(feature.properties.name);
-                    const park_name = normalize(feature.properties.park_name);
-                    if (name.includes(value) || name.includes(value)) {
-                        filtered.push(feature);
-                    }
-                }
-
-                // Populate the sidebar with filtered results
-                renderListings(filtered);
-
-                // Set the filter to populate features into the layer.
-                if (filtered.length) {
-                    map.setFilter('campgrounds', [
-                        'match',
-                        ['get', 'name'],
-                        filtered.map((feature) => {
-                            return feature.properties.name;
-                        }),
-                        true,
-                        false
-                    ]);
-                }
+        const url = `/campground.json?code=${code}`;
+        fetch(url)
+            .then(response => response.json())
+            .then(responseJson => {
+                campName.innerText = responseJson.name;
+                parkName.innerText = responseJson.parkName;
+                campImage.src = responseJson.imageUrl;
+                campDescr.innerHTML = responseJson.description;
+                campgroundCode.value = code;
             });
+    }
 
+    $(function() {
+        $('input[name="datefilter"]').daterangepicker({
+            autoUpdateInput: false,
+            opens: 'left',
+            drops: 'auto',
+            locale: {
+                cancelLabel: 'Clear'
+            },
+            maxSpan: {
+                "months": 12
+            }
+        });
+        $('input[name="datefilter"]').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('MMMM D, YYYY') + ' - ' + picker.endDate.format('MMMM D, YYYY'));
+        });
+        $('input[name="datefilter"]').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+    });
+
+    function renderListings(features) {
+        const empty = document.createElement('p');
+        // Clear any existing listings
+        listingEl.innerHTML = '';
+        let itemLinks = [];
+        if (features.length) {
+            for (const feature of features) {
+                const itemLink = document.createElement('a');
+                const label = `${feature.properties.name}`;
+                itemLink.textContent = label;
+                itemLink.addEventListener('mouseover', () => {
+                    popup
+                        .setLngLat(feature.geometry.coordinates)
+                        .setText(label)
+                        .addTo(map);
+                });
+                // Show alert box and 3D terrain on click
+                itemLink.addEventListener('click', () => {
+                    $('#modalCenter').modal('show');
+                    map
+                        .setZoom(13.1)
+                        .setCenter(feature.geometry.coordinates)
+                        .setPitch(85)
+                        .setBearing(80);
+                    map.setLayoutProperty('campground', 'visibility', 'none');
+                    populateModal(feature.properties.name, feature.properties.code);
+                });
+                itemLinks.push(itemLink);
+            }
+            for (const itemLink of itemLinks) {
+                listingEl.appendChild(itemLink);
+            }
+        } else if (features.length === 0 && filterEl.value !== '') {
+            empty.textContent = 'No results found';
+            listingEl.appendChild(empty);
+        } 
+    }
+
+    // Convert to lower case for search
+    function normalize(string) {
+        return string.trim().toLowerCase();
+    }
+
+    map.on('load', () => {
+        map.loadImage(
+            'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
+            (error, image) => {
+                if (error) throw error;
+                map.addImage('custom-marker', image);
+                // Add a GeoJSON source with 2 points
+                map.addSource('campgrounds', {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'FeatureCollection',
+                        'features': geojson
+                    }
+                });
+                map.addLayer({
+                'id': 'campground',
+                'source': 'campgrounds',
+                'type': 'circle',
+                'paint': {
+                    'circle-color': '#0d6efd',
+                    'circle-radius': 4,
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                    }
+                });
+                addTerrain()
+                renderListings(geojson)
+            }
+        );
+
+        // Reset back to original map settings when modal is closed out
+        const closeButton = document.getElementsByClassName("close");
+
+        closeButton[0].addEventListener('click', () => {
+            map.setZoom(5)
+            map.setCenter([-116.417931, 37.8])
+            map.setPitch(0)
+            map.setBearing(0)
+            map.setLayoutProperty('campground', 'visibility', 'visible');
         });
 
-   
-    </script>
+        // Filter campgrounds on search keyup
+        filterEl.addEventListener('keyup', (e) => {
+            const value = normalize(e.target.value);
+
+            // Filter campgrounds that match the input value
+            let filtered = [];
+            for (const feature of geojson) {
+                const name = normalize(feature.properties.name);
+                const park_name = normalize(feature.properties.park_name);
+                if (name.includes(value) || name.includes(value)) {
+                    filtered.push(feature);
+                }
+            }
+
+            // Populate the sidebar with filtered results
+            renderListings(filtered);
+
+            // Filter on campgrounds
+            filteredNames = filtered.map((feature) => {
+                        return feature.properties.name;
+                    })
+
+            let uniqueFilteredNames = [...new Set(filteredNames)]
+
+            if (filtered.length) {
+                map.setFilter('campground', [
+                    'match',
+                    ['get', 'name'],
+                    uniqueFilteredNames,
+                    true,
+                    false
+                ]);
+            }
+        });
+
+    });
+
+
+
+</script>
 
 {% endblock %}

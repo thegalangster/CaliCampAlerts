@@ -1,4 +1,4 @@
-import requests, crud, os
+import requests, crud, os, re
 from datetime import datetime
 from server import app
 from model import connect_to_db
@@ -36,8 +36,13 @@ while more_data:
                     image = ""
             with app.app_context():
                 connect_to_db(app)
-                crud.create_campground(name=campground["FacilityName"],
-                                    code=campground["FacilityID"].title(), 
+
+                # Sanitize campground name
+                name = campground["FacilityName"].title()
+                name = re.split("[.?!()\-,]", name)[0]
+
+                crud.create_campground(name=name,
+                                    code=campground["FacilityID"], 
                                     park_type="federal", 
                                     park_name=park_name.title(), 
                                     lat_long={"lat": campground["FacilityLatitude"], "long": campground["FacilityLongitude"]}, 

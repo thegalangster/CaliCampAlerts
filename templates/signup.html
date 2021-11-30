@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="form-wrapper">
+
+    {% if form.errors %}
+        <ul class="alert alert-danger">
+        {% for error in form.errors %}
+            Error: {{ form.errors[error][0] }}
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="alert alert-danger">
+            {% for message in messages %}
+                Error: {{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <h5>Create Account</h5>
+
+    <form method="POST" action="/signup">
+
+        {{ form.csrf_token }}
+
+        <fieldset class="name">
+            Name
+            {{ form.name(placeholder="Enter Full Name") }}
+        </fieldset>
+
+        <fieldset class="username">
+            Username
+            {{ form.username(placeholder="Enter Username") }}
+        </fieldset>
+            
+        <fieldset class="password">
+            Password
+            {{ form.password(placeholder="Create Password") }}
+        </fieldset>
+            
+        <fieldset class="confirm_password">
+            Confirm Password
+            {{ form.confirm_password(placeholder="Enter Password Again") }}
+        </fieldset>
+            
+        <fieldset class="email">
+            Email
+            {{ form.email(placeholder="Enter Email") }}
+        </fieldset>
+
+        <fieldset class="phone">
+            Phone Number
+            {{ form.phone(placeholder="Enter Phone Number") }}
+        </fieldset>
+
+        <div class="submit-button">
+            {{ form.submit }}
+        </div>
+    
+    </form>
+    
+        <div class="login-signup">
+          <div>
+            <span>Existing account?</span>
+            <a href="/login">Login</a>
+          </div>
+        </div>
+
+</div>
+{% endblock %}

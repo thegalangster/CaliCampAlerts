@@ -1,6 +1,7 @@
 body {
     min-height: 100vh;
     min-height: -webkit-fill-available;
+    font-size: 13px;
   }
   
   html {
@@ -34,6 +35,8 @@ body {
   }
   
   .dropdown-toggle { outline: 0; }
+
+ .dropdown-menu { font-size: 13px }
   
   .nav-flush .nav-link {
     border-radius: 0;

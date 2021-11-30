@@ -1,10 +1,12 @@
 """CaliCamp Alerts Model"""
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     """Users"""
 
     __tablename__ = "users"
@@ -16,11 +18,25 @@ class User(db.Model):
     username = db.Column(db.String, unique=True)
     password = db.Column(db.String)
 
-    email = db.Column(db.String, unique=True, nullable=True)
+    email = db.Column(db.String, nullable=True)
     phone = db.Column(db.BigInteger, nullable=True)
   
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
+
+    def get_id(self):
+           return (self.user_id)
+
+    def set_password(self, password):
+        """Create a hashed password"""
+        self.password = generate_password_hash(
+                password,
+                method='sha256'
+        )
+
+    def check_password(self, password):
+        """Check password"""
+        return check_password_hash(self.password, password)
 
     def __repr__(self):
         return f'<User user_id={self.user_id} name={self.name} username={self.username} email={self.email} phone={self.phone}>'
