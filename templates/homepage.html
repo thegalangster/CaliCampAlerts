@@ -45,6 +45,8 @@
                             <div class="form-group">
                                 <img id="campImage">
 
+                                <a id="booking_link" target="_blank">Booking Link</a>
+
                                 <form method="POST" action="/create_alert">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <label>Select Date Range:</label>
@@ -128,6 +130,7 @@
         const campDescr = document.getElementById("campDescr")
         const bookingReqs = document.getElementById("bookingReqs")
         const campgroundCode = document.getElementById("campground_code")
+        const bookingLink = document.getElementById("booking_link")
 
         const url = `/campground.json?code=${code}`;
         fetch(url)
@@ -138,6 +141,7 @@
                 campImage.src = responseJson.imageUrl;
                 campDescr.innerHTML = responseJson.description;
                 campgroundCode.value = code;
+                bookingLink.href = 'https://www.recreation.gov/camping/campgrounds/' + code
             });
     }
 

@@ -35,27 +35,31 @@ celery.conf.timezone = 'America/Los_Angeles'
 # Performed once celery app is up
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-        sender.add_periodic_task(1800.0, collect_and_alert.s(), expires=60.0)
+        sender.add_periodic_task(240.0, collect_and_alert.s(), expires=60.0)
 
 @celery.task
-def collect_and_alert(alerts=None):
+def collect_and_alert(alert_id=None):
+    print("***** ALERT TASK RUNNING *****")
     with app.app_context():
         connect_to_db(app)
         # Periodic check to run on all existing alerts
-        if alerts is None:
+        if alert_id is None:
             alerts = crud.get_all_alerts()
+        else:
+            alerts = [crud.get_alert_by_id(alert_id)]
         for alert in alerts:
             # Collect and check availability based on alert requirements
-            if collect.check_availability(alert=alert):
+            if not alert.is_available:
+                if collect.check_availability(alert=alert):
+                    alert.is_available = True
                 # Send text or email
-                if alert.phone_enabled:
-                    message.send_text(phone_number=alert.user.phone, campground_code=alert.campground.code)
-                if alert.email_enabled:
-                    message.send_email(email=alert.user.email, campground_code=alert.campground.code)
-                # Delete alert
-                crud.delete_alert(alert)
-
-
+                if alert.phone_enabled and not alert.is_sent_phone:
+                    if message.send_text(phone_number=alert.user.phone, campground_code=alert.campground.code):
+                        alert.is_sent_phone = True
+                if alert.email_enabled and not alert.is_sent_email:
+                    if message.send_email(email=alert.user.email, campground_code=alert.campground.code):
+                        alert.is_sent_email = True
+                db.session.commit()
 
 @app.route('/')
 def index():
@@ -145,6 +149,7 @@ def load_user(user_id):
     return None
 
 @app.route('/create_alert', methods=['POST'])
+@login_required
 def create_alert():
     datefilter = request.form.get("datefilter").split(' - ')
     datefilter_start = datetime.strptime(datefilter[0], "%B %d, %Y")
@@ -152,7 +157,11 @@ def create_alert():
     email = request.form.get("email")
     text = request.form.get("text")
     campground = crud.get_campground_by_code(request.form.get("campground_code"))
+    print("CAMPGROUND *******")
+    print(campground)
     user = crud.get_user_by_id(current_user.get_id())
+    print("USE *******")
+    print(user)
 
     time_delta = datefilter_stop - datefilter_start
 
@@ -168,11 +177,23 @@ def create_alert():
     }
 
     now = datetime.now()
-    new_alert = crud.create_alert(email_enabled=alert['email_enabled'], phone_enabled=alert['phone_enabled'], date_start=alert['date_start'], date_stop=alert['date_stop'], day=alert['day'], min_length=alert['min_length'], campground=campground, user=user, created_at=now, updated_at=now)
+    new_alert = crud.create_alert(is_available=False, is_sent_email=False, is_sent_phone=False, email_enabled=alert['email_enabled'], phone_enabled=alert['phone_enabled'], date_start=alert['date_start'], date_stop=alert['date_stop'], day=alert['day'], min_length=alert['min_length'], campground=campground, user=user, created_at=now, updated_at=now)
+    print("CREATE ALERT 1")
+    print(new_alert)
 
-    collect_and_alert.s(new_alert)
+    alert_id = new_alert.alert_id
+    server.collect_and_alert.s(alert_id=alert_id).apply_async()
     campgrounds = crud.get_all_campgrounds()
+    print("CREATE ALERT")
+    print(new_alert)
     return render_template('homepage.html', mapbox_access_token=mapbox_access_token, campgrounds=convert_to_geojson(campgrounds))
+
+@app.route('/show_alert')
+@login_required
+def show_alert():
+
+    return render_template('alerts.html', codes=codes)
+
 
 @app.route('/delete_alert', methods=['POST'])
 def delete_alert():

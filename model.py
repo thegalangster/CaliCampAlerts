@@ -47,6 +47,9 @@ class Alert(db.Model):
     __tablename__ = "alerts"
 
     alert_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    is_available = db.Column(db.Boolean)
+    is_sent_email = db.Column(db.Boolean)
+    is_sent_phone = db.Column(db.Boolean)
     email_enabled = db.Column(db.Boolean)
     phone_enabled = db.Column(db.Boolean)
 
@@ -65,7 +68,7 @@ class Alert(db.Model):
     updated_at = db.Column(db.DateTime)
 
     def __repr__(self):
-        return f'<Alert alert_id={self.alert_id} email_enabled={self.email_enabled} phone_enabled={self.phone_enabled} date_start={self.date_start} date_stop={self.date_stop} day={self.day} min_length={self.min_length}>'
+        return f'<Alert is_sent_email={self.is_sent_email} is_sent_phone={self.is_sent_phone} is_available={self.is_available} alert_id={self.alert_id} email_enabled={self.email_enabled} phone_enabled={self.phone_enabled} date_start={self.date_start} date_stop={self.date_stop} day={self.day} min_length={self.min_length}>'
  
 class Campground(db.Model):
     """Campgrounds"""

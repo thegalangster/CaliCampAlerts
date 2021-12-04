@@ -15,11 +15,15 @@ def send_text(phone_number, campground_code):
     text_body = form_text_message(campground_code)
 
     # Send the text
-    message = client.messages.create(
-    to=phone_number, 
-    from_="+16413213785",
-    body=text_body)
-
+    try:
+        message = client.messages.create(
+        to=phone_number, 
+        from_="+16413213785",
+        body=text_body)
+        return True
+    except Exception as e:
+        print(e.message)
+        return False
 
 def send_email(email, campground_code):
 
@@ -39,15 +43,17 @@ def send_email(email, campground_code):
         print(response.status_code)
         print(response.body)
         print(response.headers)
+        return True
     except Exception as e:
         print(e.message)
+        return False
 
 
 def form_text_message(campground_code):
     # Form message
     campground_name = crud.get_campground_by_code(campground_code).name.title()
     url = "https://www.recreation.gov/camping/campgrounds/" + str(campground_code)
-    return "Availability at " + campground_name + "\n Book Here: " + url 
+    return "Availability at " + campground_name + "\n Book Here: " + url
 
 
 def initial_text_message():

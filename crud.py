@@ -17,10 +17,14 @@ def create_user(name, username, password, email, phone, created_at=datetime.now(
     db.session.commit()
     return user
 
-def create_alert(email_enabled, phone_enabled, date_start, date_stop, day, min_length, campground, user, created_at, updated_at):
+def create_alert(is_available, is_sent_email, is_sent_phone, email_enabled, phone_enabled, date_start, date_stop, day, min_length, campground, user, created_at, updated_at):
     """Create and return a new alert."""
 
-    alert = Alert(email_enabled=email_enabled, 
+    alert = Alert(
+                is_available=is_available,
+                is_sent_email=is_sent_email,
+                is_sent_phone=is_sent_phone,
+                email_enabled=email_enabled, 
                 phone_enabled=phone_enabled, 
                 date_start=date_start, 
                 date_stop=date_stop, 

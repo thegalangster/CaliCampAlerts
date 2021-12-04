@@ -101,11 +101,6 @@ def filter_on_requirements(availability_set, alert):
     if date_window:
         date_windows.append(date_window)
 
-    # Implement storing availability in DB here
-
-    print("**** AVAILABILITY WINDOWS ****")
-    print(date_windows)
-
     if date_windows:
         return True
 

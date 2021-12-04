@@ -8,6 +8,8 @@ os.system('createdb calicamp')
 model.connect_to_db(server.app)
 model.db.create_all()
 
+"""
+
 user = {
     "name": "Aimee Galang",
     "username": "aimeegalang",
@@ -45,3 +47,4 @@ date_start = datetime.strptime(alert['date_start'], "%Y-%m-%d")
 date_stop = datetime.strptime(alert['date_stop'], "%Y-%m-%d")
 
 new_alert = crud.create_alert(email_enabled=(alert['email_enabled'] == 'True'), phone_enabled=(alert['phone_enabled'] == 'True'), date_start=date_start, date_stop=date_stop, day=alert['day'], min_length=alert['min_length'], campground=new_campground, user=new_user, created_at=now, updated_at=now)
+"""
