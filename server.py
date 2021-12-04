@@ -52,7 +52,8 @@ def collect_and_alert(alert_id=None):
             if not alert.is_available:
                 if collect.check_availability(alert=alert):
                     alert.is_available = True
-                # Send text or email
+            # Send text or email
+            if alert.is_available:
                 if alert.phone_enabled and not alert.is_sent_phone:
                     if message.send_text(phone_number=alert.user.phone, campground_code=alert.campground.code):
                         alert.is_sent_phone = True
