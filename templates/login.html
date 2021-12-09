@@ -1,54 +1,63 @@
 {% extends 'base.html' %}
 
 {% block body %}
-<div class="form-wrapper">
 
-    {% if form.errors %}
-        <ul class="alert alert-danger">
-        {% for error in form.errors %}
-            Error: {{ form.errors[error][0] }}
-        {% endfor %}
-        </ul>
-    {% endif %}
+<link href="/static/default.css" rel="stylesheet">
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="alert alert-danger">
-            {% for message in messages %}
-                Error: {{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
+<div id="tree-background" class="w-100">
+    <div id="white-box" class="table-responsive">
 
-    <h5>Login</h5>
+        <div class="form-wrapper">
 
-    <form method="POST" action="/login">
+            {% if form.errors %}
+                <ul class="alert alert-danger">
+                {% for error in form.errors %}
+                    Error: {{ form.errors[error][0] }}
+                {% endfor %}
+                </ul>
+            {% endif %}
 
-        {{ form.csrf_token }}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="alert alert-danger">
+                    {% for message in messages %}
+                        Error: {{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
 
-        <fieldset class="username">
-            Username
-            {{ form.username(placeholder="Enter Username") }}
-        </fieldset>
+            <h5 style="text-align: center;">Login</h5>
+
+            <form method="POST" action="/login">
+
+                {{ form.csrf_token }}
+
+                <fieldset class="username">
+                    <label class="form-label">Username</label>
+                    {{ form.username(placeholder="Enter Username", class='form-control form-control-sm') }}
+                </fieldset>
+                    
+                <fieldset class="password">
+                    <label class="form-label">Password</label>
+                    {{ form.password(placeholder="Password", class='form-control form-control-sm') }}
+                </fieldset>
+
+                <div class="submit-button" style="margin-top: 10px; text-align: right;">
+                    {{ form.submit(class="btn-sm btn-primary") }}
+                </div>
             
-        <fieldset class="password">
-            Password
-            {{ form.password(placeholder="Password") }}
-        </fieldset>
+            </form>
+            
+            <div class="login-signup" style="text-align: right;">
+                <div>
+                <span class="fw-lighter">Need an account?</span>
+                <a href="/signup">Sign Up</a>
+                </div>
+            </div>
 
-        <button class="submit-button">
-            {{ form.submit }}
-        </button>
-    
-    </form>
-    
-    <div class="login-signup">
-        <div>
-        <span>Need an account?</span>
-        <a href="/signup">Sign Up</a>
         </div>
     </div>
-
 </div>
+
 {% endblock %}

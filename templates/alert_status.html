@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<link href="/static/default.css" rel="stylesheet">
+
+<div id="tree-background" class="w-100">
+    <div id="white-box" class="table-responsive">
+        <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col" class="bg-dark text-white">Campground</th>
+                <th scope="col" class="bg-dark text-white">Date</th>
+                <th scope="col" class="bg-dark text-white">Availability</th>
+                <th scope="col" class="bg-dark text-white">Phone Alert</th>
+                <th scope="col" class="bg-dark text-white">Email Alert</th>
+                <th scope="col" class="bg-dark text-white"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not alerts %}
+            <tr>
+                <td>No alerts created for this account</td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            {% endif %}
+            {% for alert in alerts %}
+            <tr>
+                <td>
+                    {{ alert["campground_name"] }}
+                    <br>
+                    <div class="fw-lighter fs-7">{{ alert["park_name"] }}</div>
+                    <a href="{{ alert['booking_url'] }}" target="_blank">Book Here</a>
+                </td>
+                <td>{{ alert["date_start"] }} - {{ alert["date_stop"] }}</td>
+                {% if alert["is_available"] %}
+                    <td>Alerted</td>
+                    {% if alert["phone_enabled"] %}
+                        <td><input type="checkbox" disabled="true" checked></td>
+                    {% else %}
+                        <td><input type="checkbox" disabled="true"></td>
+                    {% endif %}
+                    {% if alert["email_enabled"] %}
+                        <td><input type="checkbox" disabled="true" checked></td>
+                    {% else %}
+                        <td><input type="checkbox" disabled="true"></td>
+                    {% endif %}
+                    <td id="buttons">
+                        <form action="/delete_alert" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <input type="hidden" name="alert_id" value='{{ alert["alert_id"] }}' />
+                            <button type="submit" class="btn btn-primary">Delete Alert</button>
+                        </form>
+                    </td>
+                {% else %}
+                    <td>Not Available</td>
+                        <form action="/change_alert" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="alert_id" value='{{ alert["alert_id"] }}' />
+                                {% if alert["phone_enabled"] %}
+                                    <td><input type="checkbox" name="phone" checked></td>
+                                {% else %}
+                                    <td><input type="checkbox" name="phone"></td>
+                                {% endif %}
+                                {% if alert["email_enabled"] %}
+                                    <td><input type="checkbox" name="email" checked></td>
+                                {% else %}
+                                    <td><input type="checkbox" name="email"></td>
+                                {% endif %}
+                                <td id="buttons">
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                    <br>
+                                    <button type="submit" class="btn btn-primary" formaction="/delete_alert" formmethod="post">Delete Alert</button>
+                                </td>
+                        </form>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+    // Highlight correct sidebar link
+    var currentLocation = window.location.pathname;
+    const href = document.querySelectorAll(`.nav-link[href="${currentLocation}"`);
+    console.log(href)
+    href[0].classList.add("active");
+
+    var alerts= {{ alerts }};
+    for (const alert of alerts) {
+        alert.date_start = alert.date_start.toString();
+        console.log(alert.date_start)
+        alert.date_stop = alert.date_start.toString();
+    }
+</script>
+
+{% endblock %}
+
+

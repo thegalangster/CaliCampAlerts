@@ -25,4 +25,7 @@ class Alert(FlaskForm):
     daterange = StringField('Date Range', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     phone = StringField('Phone', validators=[DataRequired()])
-    submit = SubmitField('Log In')
+    submit = SubmitField('Submit')
+
+class ChangeAlert(FlaskForm):
+    """Change an Alert Form"""

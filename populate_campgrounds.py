@@ -41,12 +41,16 @@ while more_data:
                 name = campground["FacilityName"].title()
                 name = re.split("[.?!()\-,]", name)[0]
 
+                # Sanitize description
+                description = campground["FacilityDescription"]
+                description = description.replace("h2>", "b>")
+
                 crud.create_campground(name=name,
                                     code=campground["FacilityID"], 
                                     park_type="federal", 
                                     park_name=park_name.title(), 
                                     lat_long={"lat": campground["FacilityLatitude"], "long": campground["FacilityLongitude"]}, 
-                                    description=campground["FacilityDescription"], 
+                                    description=description, 
                                     image=image,
                                     created_at=datetime.now(), 
                                     updated_at=datetime.now())

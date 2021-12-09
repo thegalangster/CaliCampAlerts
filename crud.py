@@ -76,6 +76,10 @@ def get_alert_by_id(id):
 def get_user_by_id(id):
     return User.query.get(id)
 
+def get_alerts_by_user(user_id):
+    user = get_user_by_id(user_id)
+    return Alert.query.filter_by(user=user).all()
+
 def get_user_by_username(username):
     return User.query.filter_by(username=username).first()
 

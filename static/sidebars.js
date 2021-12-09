@@ -6,3 +6,8 @@
     new bootstrap.Tooltip(tooltipTriggerEl)
   })
 })() 
+
+var currentLocation = window.location;
+document.querySelectorAll(`[href=${currentLocation}``);
+
+a href="/login"

@@ -60,7 +60,7 @@ def collect_and_alert(alert_id=None):
                 if alert.email_enabled and not alert.is_sent_email:
                     if message.send_email(email=alert.user.email, campground_code=alert.campground.code):
                         alert.is_sent_email = True
-                db.session.commit()
+            db.session.commit()
 
 @app.route('/')
 def index():
@@ -179,28 +179,50 @@ def create_alert():
 
     now = datetime.now()
     new_alert = crud.create_alert(is_available=False, is_sent_email=False, is_sent_phone=False, email_enabled=alert['email_enabled'], phone_enabled=alert['phone_enabled'], date_start=alert['date_start'], date_stop=alert['date_stop'], day=alert['day'], min_length=alert['min_length'], campground=campground, user=user, created_at=now, updated_at=now)
-    print("CREATE ALERT 1")
-    print(new_alert)
 
     alert_id = new_alert.alert_id
     server.collect_and_alert.s(alert_id=alert_id).apply_async()
-    campgrounds = crud.get_all_campgrounds()
-    print("CREATE ALERT")
-    print(new_alert)
-    return render_template('homepage.html', mapbox_access_token=mapbox_access_token, campgrounds=convert_to_geojson(campgrounds))
+    return redirect('/alert_status')
 
-@app.route('/show_alert')
+@app.route('/alert_status')
 @login_required
 def show_alert():
-
-    return render_template('alerts.html', codes=codes)
-
+    alerts = crud.get_alerts_by_user(current_user.user_id)
+    alerts_dict = []
+    for alert in alerts:
+        alert_dict = {
+                "alert_id": alert.alert_id,
+                "campground_name": alert.campground.name,
+                "booking_url": "https://www.recreation.gov/camping/campgrounds/" + str(alert.campground.code),
+                "park_name": alert.campground.park_name,
+                "date_start": alert.date_start.strftime("%a %b %d, %Y"),
+                "date_stop": alert.date_stop.strftime("%a %b %d, %Y"),
+                "is_available": alert.is_available,
+                "phone_enabled": alert.phone_enabled,
+                "email_enabled": alert.email_enabled
+        }
+        alerts_dict.append(alert_dict)
+    print(alerts_dict)
+    return render_template('alert_status.html', alerts=alerts_dict)
 
 @app.route('/delete_alert', methods=['POST'])
 def delete_alert():
     alert_id = request.form.get("alert_id")
     alert = crud.get_alert_by_id(alert_id)
     crud.delete_alert(alert)
+    return redirect('/alert_status')
+
+@app.route('/change_alert', methods=['POST'])
+def change_alert():
+    alert_id = request.form.get("alert_id")
+    alert = crud.get_alert_by_id(alert_id)
+    if request.form.get("email"):
+        alert.email_enabled = True
+    if request.form.get("phone"):
+        alert.phone_enabled = True
+    db.session.commit()
+    server.collect_and_alert.s(alert_id=alert_id).apply_async()
+    return redirect('/alert_status')
 
 #     *** Need to have application reachable publicly for Twilio to send a webhook ***
 #     Reference: https://www.twilio.com/docs/sms/tutorials/how-to-receive-and-reply-python

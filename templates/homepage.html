@@ -28,36 +28,39 @@
         <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-            <h3 class="modal-title" id="modalLongTitle">Create an Alert</h3>
-            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
+                <div class="col">
+                    <h5 class="modal-title" id="campName"></h5>
+                    <div class="modal-title" id="parkName" class="fw-lighter fs-7"></div>
+                </div>
+                <div class="col">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col" id="campInfo">
-                            <h5 class="modal-title" id="campName"></h5>
-                            <h6 class="modal-title" id="parkName"></h6>
-                            <div class="overflow-auto" id="campDescr"></div>
+                            <div id="campDescr"></div>
                         </div>
                         <div class="col" id="bookingReqs">
                             <div class="form-group">
                                 <img id="campImage">
-
-                                <a id="booking_link" target="_blank">Booking Link</a>
-
                                 <form method="POST" action="/create_alert">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <label>Select Date Range:</label>
+                                    <label id="date_range">Select Date Range:</label>
                                     <input type="text" name="datefilter" value=""/>
                                     <div class="notification-type">
-                                        <label>Email <input type="checkbox" id="email" name="email" value="yes"/></label>
-                                        <label>Text <input type="checkbox" id="text" name="text" value="yes"/></label>
+                                        <label for="email">Email Alert: </label>
+                                        <input type="checkbox" id="email" name="email" value="yes"/>
+                                        <label for="text">Text Alert: </label>
+                                        <input type="checkbox" id="text" name="text" value="yes"/>
                                     </div>
+                                    <a id="booking_link" target="_blank" style="float: right;">Booking Link</a>
                                     <input type="hidden" id="campground_code" name="campground_code" value=""/>
                                     <br>
-                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                    <button type="submit" class="btn btn-primary create_alert">Create Alert</button>
                                 </form>
 
 
@@ -78,6 +81,13 @@
 
     // Get the modal
     var modal = document.getElementById("ModalCenter");
+
+    // Highlight correct sidebar link
+    var currentLocation = window.location.pathname;
+    const href = document.querySelectorAll(`.nav-link[href="${currentLocation}"`);
+    console.log(href)
+    href[0].classList.add("active");
+
 
     // New MapBox map
     mapboxgl.accessToken = '{{ mapbox_access_token }}';
@@ -143,6 +153,12 @@
                 campgroundCode.value = code;
                 bookingLink.href = 'https://www.recreation.gov/camping/campgrounds/' + code
             });
+
+        let height = $('#bookingReqs').css('height');
+        console.log(height)
+        $('#campDescr').css('height', height);
+        $('#campInfo').css('height', height);
+
     }
 
     $(function() {
@@ -285,7 +301,6 @@
         });
 
     });
-
 
 
 </script>
